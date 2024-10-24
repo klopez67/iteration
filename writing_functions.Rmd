@@ -107,6 +107,8 @@ We want a function to take inputs:
 - mean mu
 - standard deviation sigma 
 - check code by running n = 30, mu= 4, sigma=12
+
+**You can set paramaters equal to default values by setting function (n=30,mu=2,sigma=2) but you can always override it by putting different values in when you run the code on inputs**
 ```{r}
 sim_mean_sd = function(n, mu, sigma ) {
   
@@ -125,5 +127,67 @@ sim_mean_sd = function(n, mu, sigma ) {
 }
 
 sim_mean_sd( n=30,mu=4, sigma=12)
+```
+
+
+# Revisiting past examples:
+
+```{r}
+fellowship_ring = readxl::read_excel("./data/LotR_Words.xlsx", range = "B3:D6") |>
+  mutate(movie = "fellowship_ring")
+
+two_towers = readxl::read_excel("./data/LotR_Words.xlsx", range = "F3:H6") |>
+  mutate(movie = "two_towers")
+
+return_king = readxl::read_excel("./data/LotR_Words.xlsx", range = "J3:L6") |>
+  mutate(movie = "return_king")
+
+lotr_tidy = bind_rows(fellowship_ring, two_towers, return_king) |>
+  janitor::clean_names() |>
+  pivot_longer(
+    female:male,
+    names_to = "sex",
+    values_to = "words") |> 
+  mutate(race = str_to_lower(race)) |> 
+  select(movie, everything()) 
+```
+
+**Write a function that can be used to abstract the data loading and cleaning process. Use this function to recreate the tidied LoTR dataset**
+
+--> if we start from loading dataset, the input values have to be path, range, and movie_name
+
+--> body of the function should tidy the data clean, pivot, mutate
+
+```{r}
+
+lotr_load_and_tidy = function(path, range, movie_name) {
+  
+  movie_df = 
+    readxl::read_excel(path, range = range) |>
+    janitor::clean_names() |>
+    pivot_longer(
+      female:male,
+      names_to = "sex",
+      values_to = "words") |>
+    mutate(
+      race = str_to_lower(race),
+      movie = movie_name) |> 
+    select(movie, everything())
+  
+  return(movie_df)
+  
+}
+```
+
+To check apply the function to create **lotr_tidy** dataframe by binding the output of the functions
+
+```{r}
+lotr_tidy = 
+  bind_rows(
+    lotr_load_and_tidy("data/LotR_Words.xlsx", "B3:D6", "fellowship_ring"),
+    lotr_load_and_tidy("data/LotR_Words.xlsx", "F3:H6", "two_towers"),
+    lotr_load_and_tidy("data/LotR_Words.xlsx", "J3:L6", "return_king"))
+
+lotr_tidy
 ```
 

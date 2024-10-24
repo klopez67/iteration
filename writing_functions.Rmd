@@ -18,3 +18,112 @@ set.seed(1)
 
 ```
 
+## My First Function 
+
+Generating random numbers from the normal distribution and finidng the standard deviation. 
+```{r}
+x_vec = rnorm(25, mean = 5, sd = 3)
+
+(x_vec - mean(x_vec)) / sd(x_vec)
+```
+To create a function to do this we create a new function that takes the sample as an argument, computes the vector of Z scores in the body, and returns the result. 
+
+- x is the generic input of the sample 
+- can be explicit and state to return(z)
+
+```{r}
+z_scores = function(x) {
+  
+  z = (x - mean(x)) / sd(x)
+  z
+  
+}
+
+z_scores(x=x_vec)
+```
+Checking to see if it works: 
+```{r}
+z_scores(x=3)
+```
+
+To update the code so it works always: 
+
+- set a condition if x is numeric, and a minimum of 1 vector to compute the SD
+```{r}
+z_scores = function(x) {
+  
+  if (!is.numeric(x)) {
+    stop("Argument x should be numeric")
+  } else if (length(x) == 1) {
+    stop("Z scores cannot be computed for length 1 vectors")
+  }
+  
+  z = (x- mean(x)) / sd(x)
+  
+  return(z)
+}
+
+```
+
+## Multiple Outputs
+
+In some cases it might be better to return the mean and standard deviation instead of the Z scores. A first option is to store each of the values in a named list, and to return that list. 
+
+- creating a new mean and standard deviation
+- saves mean and sd in a tibble dataframe and returns if
+```{r}
+mean_and_sd= function(x){
+  mean_x=mean(x)
+  sd_x=sd(x)
+  out_df = tibble(mean= mean_x,
+                  sd= sd_x)
+  return(out_df)
+}
+```
+
+Apply to our vector x_vec
+```{r}
+mean_and_sd(x_vec)
+```
+## Checking code using simulation 
+
+```{r}
+sim_df = 
+  tibble(
+    x=rnorm(30,10,5)
+    )
+
+sim_df|>
+  summarize(
+    mean= mean(x),
+    sd= sd(x)
+  )
+```
+** **Creating a simulation function to check sample mean and sd:** **
+
+We want a function to take inputs: 
+
+- sample size n 
+- mean mu
+- standard deviation sigma 
+- check code by running n = 30, mu= 4, sigma=12
+```{r}
+sim_mean_sd = function(n, mu, sigma ) {
+  
+  sim_df = tibble(
+    x = rnorm(n, mean = mu, sd = sigma),
+  )
+  
+  out_df=
+    sim_df |> 
+    summarize(
+      mu_hat = mean(x),
+      sigma_hat = sd(x)
+    )
+  
+  return(out_df)
+}
+
+sim_mean_sd( n=30,mu=4, sigma=12)
+```
+

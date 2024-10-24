@@ -1,0 +1,20 @@
+---
+title: "Writing Functions"
+author: "Kimberly Lopez"
+date: "2024-10-24"
+output: github_document
+---
+
+If you use the same code twice, you need a function – this will improve code readability, facilitate troubleshooting, and reduce chances for mistakes. This content looks at the best approaches for writing R functions.
+
+# Example 
+
+**setting the seed so that the output on this page is fixed**
+
+```{r}
+library(tidyverse)
+library(rvest)
+set.seed(1)
+
+```
+

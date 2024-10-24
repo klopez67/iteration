@@ -200,7 +200,7 @@ sim_mean_sd( n=30,mu=4, sigma=12)
     ##    <dbl>     <dbl>
     ## 1   5.03      12.4
 
-# Revisiting past examples:
+# Revisiting past examples: LOTR DATA
 
 ``` r
 fellowship_ring = readxl::read_excel("./data/LotR_Words.xlsx", range = "B3:D6") |>
@@ -261,27 +261,131 @@ lotr_tidy =
     lotr_load_and_tidy("data/LotR_Words.xlsx", "F3:H6", "two_towers"),
     lotr_load_and_tidy("data/LotR_Words.xlsx", "J3:L6", "return_king"))
 
-lotr_tidy
+head(lotr_tidy)
 ```
 
-    ## # A tibble: 18 × 4
-    ##    movie           race   sex    words
-    ##    <chr>           <chr>  <chr>  <dbl>
-    ##  1 fellowship_ring elf    female  1229
-    ##  2 fellowship_ring elf    male     971
-    ##  3 fellowship_ring hobbit female    14
-    ##  4 fellowship_ring hobbit male    3644
-    ##  5 fellowship_ring man    female     0
-    ##  6 fellowship_ring man    male    1995
-    ##  7 two_towers      elf    female   331
-    ##  8 two_towers      elf    male     513
-    ##  9 two_towers      hobbit female     0
-    ## 10 two_towers      hobbit male    2463
-    ## 11 two_towers      man    female   401
-    ## 12 two_towers      man    male    3589
-    ## 13 return_king     elf    female   183
-    ## 14 return_king     elf    male     510
-    ## 15 return_king     hobbit female     2
-    ## 16 return_king     hobbit male    2673
-    ## 17 return_king     man    female   268
-    ## 18 return_king     man    male    2459
+    ## # A tibble: 6 × 4
+    ##   movie           race   sex    words
+    ##   <chr>           <chr>  <chr>  <dbl>
+    ## 1 fellowship_ring elf    female  1229
+    ## 2 fellowship_ring elf    male     971
+    ## 3 fellowship_ring hobbit female    14
+    ## 4 fellowship_ring hobbit male    3644
+    ## 5 fellowship_ring man    female     0
+    ## 6 fellowship_ring man    male    1995
+
+## \# Revisiting past examples: NSDUH Data
+
+This is a reading data from the web code that scrapes the information
+for us.
+
+We could take the first table “nth(1)” by: **read_html(html)**
+
+``` r
+nsduh_url = "http://samhda.s3-us-gov-west-1.amazonaws.com/s3fs-public/field-uploads/2k15StateFiles/NSDUHsaeShortTermCHG2015.htm"
+
+nsduh_html = read_html(nsduh_url)
+
+data_marj = 
+  nsduh_html |> 
+  html_table() |> 
+  nth(1) |>
+  slice(-1) |> 
+  select(-contains("P Value")) |>
+  pivot_longer(
+    -State,
+    names_to = "age_year", 
+    values_to = "percent") |>
+  separate(age_year, into = c("age", "year"), sep = "\\(") |>
+  mutate(
+    year = str_replace(year, "\\)", ""),
+    percent = str_replace(percent, "[a-c]$", ""),
+    percent = as.numeric(percent)) |>
+  filter(!(State %in% c("Total U.S.", "Northeast", "Midwest", "South", "West")))
+```
+
+We can also create a function that does the data import for us:
+
+–\> takes the input html for the link –\> take the input table_num that
+we put into “nth()” to ddenote which table from the link we want –\>
+takes the input “table_name” to know which
+
+``` r
+nsduh_table <- function(html, table_num, table_name) {
+  
+  table = 
+    html |> 
+    html_table() |> 
+    nth(table_num) |>
+    slice(-1) |> 
+    select(-contains("P Value")) |>
+    pivot_longer(
+      -State,
+      names_to = "age_year", 
+      values_to = "percent") |>
+    separate(age_year, into = c("age", "year"), sep = "\\(") |>
+    mutate(
+      year = str_replace(year, "\\)", ""),
+      percent = str_replace(percent, "[a-c]$", ""),
+      percent = as.numeric(percent),
+      name = table_name) |>
+    filter(!(State %in% c("Total U.S.", "Northeast", "Midwest", "South", "West")))
+  
+  table
+  
+}
+```
+
+``` r
+nsduh_results = 
+  bind_rows(
+    nsduh_table(nsduh_html, 1, "marj_one_year"),
+    nsduh_table(nsduh_html, 4, "cocaine_one_year"),
+    nsduh_table(nsduh_html, 5, "heroin_one_year")
+  )
+
+head(nsduh_results)
+```
+
+    ## # A tibble: 6 × 5
+    ##   State   age   year      percent name         
+    ##   <chr>   <chr> <chr>       <dbl> <chr>        
+    ## 1 Alabama 12+   2013-2014    9.98 marj_one_year
+    ## 2 Alabama 12+   2014-2015    9.6  marj_one_year
+    ## 3 Alabama 12-17 2013-2014    9.9  marj_one_year
+    ## 4 Alabama 12-17 2014-2015    9.71 marj_one_year
+    ## 5 Alabama 18-25 2013-2014   27.0  marj_one_year
+    ## 6 Alabama 18-25 2014-2015   26.1  marj_one_year
+
+**We do not want to put the html link within our function because it
+will constantly download the data from the internet multiple times, so
+name this outside the functions**
+
+We can save this nsduh function into a r script paste it there save that
+into a “source folder” and then call on the function whenevre in this
+project and it does the same thing.
+
+``` r
+source("source/nsduh_table_format.R")
+
+bind_rows(
+    nsduh_table(nsduh_html, 1, "marj_one_year"),
+    nsduh_table(nsduh_html, 4, "cocaine_one_year"),
+    nsduh_table(nsduh_html, 5, "heroin_one_year")
+  )
+```
+
+    ## # A tibble: 1,530 × 5
+    ##    State   age   year      percent name         
+    ##    <chr>   <chr> <chr>       <dbl> <chr>        
+    ##  1 Alabama 12+   2013-2014    9.98 marj_one_year
+    ##  2 Alabama 12+   2014-2015    9.6  marj_one_year
+    ##  3 Alabama 12-17 2013-2014    9.9  marj_one_year
+    ##  4 Alabama 12-17 2014-2015    9.71 marj_one_year
+    ##  5 Alabama 18-25 2013-2014   27.0  marj_one_year
+    ##  6 Alabama 18-25 2014-2015   26.1  marj_one_year
+    ##  7 Alabama 26+   2013-2014    7.1  marj_one_year
+    ##  8 Alabama 26+   2014-2015    6.81 marj_one_year
+    ##  9 Alabama 18+   2013-2014    9.99 marj_one_year
+    ## 10 Alabama 18+   2014-2015    9.59 marj_one_year
+    ## # ℹ 1,520 more rows

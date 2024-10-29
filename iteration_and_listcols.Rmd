@@ -27,10 +27,13 @@ l
 ```
 
 When working with lists use square brackets to pull a vector of the list 
+
 ```{r}
 l[["mat"]]
 ```
+
 You can access different columns by 
+
 ```{r}
 l[["mat"]][1,3]
 ```
@@ -43,6 +46,7 @@ l[[1]]
 # For loops
 
 Now were going to make another list of normal samples 
+
 ```{r}
 list_norms = 
   list(
@@ -80,6 +84,7 @@ mean_and_sd = function(x) {
 Lets use the function to tskse the mean and sd of each sample
 
 You can call a function based on index or by the name of the list
+
 ```{r}
 mean_and_sd(list_norms[[1]])
 mean_and_sd(list_norms[["a"]])
@@ -88,8 +93,9 @@ mean_and_sd(list_norms[["a"]])
 We can run the for loop to apply the function across multiple 
 
 - Create output list and run a for loop
--> line 93 creates a vector type list with a length of 4 
--> we left output and the [[ ]] blank
+- line 93 creates a vector type list with a length of 4 
+- we left output and the [[ ]] blank
+
 ```{r}
 output = vector("list", length=4) 
 
@@ -99,6 +105,7 @@ for( i in 1:4){
 
 output
 ```
+
 Our output is a list of dataframes for each a,b,c,d
 
 # `map` 
@@ -116,6 +123,7 @@ output
 ```
 
 We can do the same for getting median: 
+
 ```{r}
 output = map_dbl(list_norms, median, .id = "input")
 
@@ -125,6 +133,7 @@ output
 #`map` variants
 
 Using map_bdl simplifies things into a vector instead of a list 
+
 ```{r}
 output = map_dbl(list_norms, median, .id = "input")
 
@@ -137,6 +146,7 @@ output = map_dfr(list_norms, mean_and_sd, .id = "input")
 
 
 We can bind the rows of this list of dataframes
+
 ```{r}
 
 output= 
@@ -149,6 +159,7 @@ output
 # List columns 
 
 We have a datafram with columns "name" and holds the sample 
+
 ```{r}
 listcol_df = 
   tibble(
@@ -160,19 +171,167 @@ listcol_df |> pull(name)
 listcol_df |> pull(samp)
 ```
 
-We can still treat this as a dataframe   
+We can still treat this as a dataframe  
+
 ```{r}
 listcol_df$samp[[1]]
 ```
 It still treats it as a list 
-we can still apply the function to the first element of the list 
+we can still apply the function to the first element of the list
+
 ```{r}
 mean_and_sd(listcol_df$samp[[1]])
 ```
 We can still map of the this list and compute mean and sd 
 
 - map takes the input of sample from the df lists, and the function 
+
 ```{r}
 map(listcol_df[["samp"]],mean_and_sd)
+```
+
+We can use the map function to **add a list column** 
+
+- map_dbl will give you the number
+- we can use `unnest(output)` to get rid of a nested sample but keeping the values of the tibble from `mean_and_sd`
+
+```{r}
+listcol_df= 
+  listcol_df|>
+  mutate(
+    output=map(samp,mean_and_sd),
+    iqr=map_dbl(samp,IQR))|>
+  unnest(output)
+
+listcol_df
+```
+
+# NSDUH 
+
+We want to use a version of our function we saved in our source document last time:
+
+```{r}
+nsduh_table_format = function  (html, table_num) {
+  
+  out_table = 
+    html|>
+    html_table()|>
+    nth(table_num)|>
+    slice(-1)|>
+    select(-contains("P Value"))
+  
+  return(out_table)
+}
+```
+
+
+We need to import the html, and then extract the correct tables
+
+```{r}
+
+nsduh_url = "http://samhda.s3-us-gov-west-1.amazonaws.com/s3fs-public/field-uploads/2k15StateFiles/NSDUHsaeShortTermCHG2015.htm"
+
+nsduh_html = read_html(nsduh_url)
+
+nsduh_table_format(html= nsduh_html,table_num = 1)
+nsduh_table_format(html= nsduh_html,table_num = 4)
+nsduh_table_format(html= nsduh_html,table_num = 5)
+```
+
+Creating a column and putting it into a dataframe
+
+```{r}
+nsduh_df= 
+  tibble(
+    drug= c("marj","cocaine","herion"),
+    table_n= c(1,4,5)
+  )|>
+  mutate(table=map(table_n,nsduh_table_format, html = nsduh_html))|>
+  unnest(table)
+
+head(nsduh_df)
+```
+
+We can either use a for loop or use the map function to create another df 
+
+**For loop way**
+
+```{r}
+output = vector("list", 3)
+
+for (i in c(1, 4, 5)) {
+  output[[i]] = nsduh_table_format(nsduh_html, i)
+}
+
+nsduh_results = bind_rows(output)
+head(nsduh_results,n=5)
+```
+
+**`map` way **
+
+```{r}
+nsduh_results = 
+  map(c(1, 4, 5), nsduh_table_format, html = nsduh_html) |> 
+  bind_rows()
+
+head(nsduh_results,n=5)
+```
+
+# Operations on nested data 
+
+Were importing 3 weather stations and creating a df of it 
+```{r message=FALSE}
+weather_df = 
+  rnoaa::meteo_pull_monitors(
+    c("USW00094728", "USW00022534", "USS0023B17S"),
+    var = c("PRCP", "TMIN", "TMAX"), 
+    date_min = "2021-01-01",
+    date_max = "2022-12-31") |>
+  mutate(
+    name = recode(
+      id, 
+      USW00094728 = "CentralPark_NY", 
+      USW00022534 = "Molokai_HI",
+      USS0023B17S = "Waterhole_WA"),
+    tmin = tmin / 10,
+    tmax = tmax / 10) |>
+  select(name, id, everything())
+```
+
+Create a list column to nest everything from date to tmin into a column
+
+```{r}
+weather_nest= 
+  weather_df|>
+  nest(data= date:tmin)
+weather_nest
+```
+
+This is a list column so we can extract the data column which will return 3 seperate dataframes for each station: 
+```{r}
+weather_nest[["data"]]
+```
+
+
+OR we can select dataframe of only from 1 
+```{r}
+weather_nest[["data"]][[1]]
+```
+
+We can try a regression tmax on tmin for 3 stations by doing a forloop or 
+
+**for loop method**
+
+We created a new column using `mutate()` and then used the `\(x)` anonymous feature since `lm` is more complicated and requires a data specification for each lm 
+
+- `pull()` allows you to pull all 3 model fits
+
+```{r}
+
+weather_nest|>
+  mutate(
+    model_fit=map(data,\(x) lm(tmax ~ tmin,data=x))
+  )|>
+  pull(model_fit)
 ```
 

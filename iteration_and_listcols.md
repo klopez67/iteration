@@ -149,9 +149,9 @@ mean_and_sd(list_norms[["a"]])
 
 We can run the for loop to apply the function across multiple
 
-- Create output list and run a for loop -\> line 93 creates a vector
-  type list with a length of 4 -\> we left output and the \[\[ \]\]
-  blank
+- Create output list and run a for loop
+- line 93 creates a vector type list with a length of 4
+- we left output and the \[\[ \]\] blank
 
 ``` r
 output = vector("list", length=4) 
@@ -367,3 +367,358 @@ map(listcol_df[["samp"]],mean_and_sd)
     ##    mean    sd
     ##   <dbl> <dbl>
     ## 1 -3.43  1.18
+
+We can use the map function to **add a list column**
+
+- map_dbl will give you the number
+- we can use `unnest(output)` to get rid of a nested sample but keeping
+  the values of the tibble from `mean_and_sd`
+
+``` r
+listcol_df= 
+  listcol_df|>
+  mutate(
+    output=map(samp,mean_and_sd),
+    iqr=map_dbl(samp,IQR))|>
+  unnest(output)
+
+listcol_df
+```
+
+    ## # A tibble: 4 × 5
+    ##   name  samp           mean    sd   iqr
+    ##   <chr> <named list>  <dbl> <dbl> <dbl>
+    ## 1 a     <dbl [20]>    2.70  1.12  1.73 
+    ## 2 b     <dbl [20]>    0.416 4.08  5.99 
+    ## 3 c     <dbl [20]>   10.1   0.191 0.222
+    ## 4 d     <dbl [20]>   -3.43  1.18  1.79
+
+# NSDUH
+
+We want to use a version of our function we saved in our source document
+last time:
+
+``` r
+nsduh_table_format = function  (html, table_num) {
+  
+  out_table = 
+    html|>
+    html_table()|>
+    nth(table_num)|>
+    slice(-1)|>
+    select(-contains("P Value"))
+  
+  return(out_table)
+}
+```
+
+We need to import the html, and then extract the correct tables
+
+``` r
+nsduh_url = "http://samhda.s3-us-gov-west-1.amazonaws.com/s3fs-public/field-uploads/2k15StateFiles/NSDUHsaeShortTermCHG2015.htm"
+
+nsduh_html = read_html(nsduh_url)
+
+nsduh_table_format(html= nsduh_html,table_num = 1)
+```
+
+    ## # A tibble: 56 × 11
+    ##    State `12+(2013-2014)` `12+(2014-2015)` `12-17(2013-2014)` `12-17(2014-2015)`
+    ##    <chr> <chr>            <chr>            <chr>              <chr>             
+    ##  1 Tota… 12.90a           13.36            13.28b             12.86             
+    ##  2 Nort… 13.88a           14.66            13.98              13.51             
+    ##  3 Midw… 12.40b           12.76            12.45              12.33             
+    ##  4 South 11.24a           11.64            12.02              11.88             
+    ##  5 West  15.27            15.62            15.53a             14.43             
+    ##  6 Alab… 9.98             9.60             9.90               9.71              
+    ##  7 Alas… 19.60a           21.92            17.30              18.44             
+    ##  8 Ariz… 13.69            13.12            15.12              13.45             
+    ##  9 Arka… 11.37            11.59            12.79              12.14             
+    ## 10 Cali… 14.49            15.25            15.03              14.11             
+    ## # ℹ 46 more rows
+    ## # ℹ 6 more variables: `18-25(2013-2014)` <chr>, `18-25(2014-2015)` <chr>,
+    ## #   `26+(2013-2014)` <chr>, `26+(2014-2015)` <chr>, `18+(2013-2014)` <chr>,
+    ## #   `18+(2014-2015)` <chr>
+
+``` r
+nsduh_table_format(html= nsduh_html,table_num = 4)
+```
+
+    ## # A tibble: 56 × 11
+    ##    State `12+(2013-2014)` `12+(2014-2015)` `12-17(2013-2014)` `12-17(2014-2015)`
+    ##    <chr> <chr>            <chr>            <chr>              <chr>             
+    ##  1 Tota… 1.66a            1.76             0.60               0.64              
+    ##  2 Nort… 1.94a            2.18             0.60               0.66              
+    ##  3 Midw… 1.37             1.43             0.48               0.54              
+    ##  4 South 1.45b            1.56             0.53               0.57              
+    ##  5 West  2.03             2.05             0.82               0.85              
+    ##  6 Alab… 1.23             1.22             0.42               0.41              
+    ##  7 Alas… 1.54a            2.00             0.51               0.65              
+    ##  8 Ariz… 2.25             2.29             1.01               0.85              
+    ##  9 Arka… 0.93             1.07             0.41               0.48              
+    ## 10 Cali… 2.14             2.16             0.89               0.94              
+    ## # ℹ 46 more rows
+    ## # ℹ 6 more variables: `18-25(2013-2014)` <chr>, `18-25(2014-2015)` <chr>,
+    ## #   `26+(2013-2014)` <chr>, `26+(2014-2015)` <chr>, `18+(2013-2014)` <chr>,
+    ## #   `18+(2014-2015)` <chr>
+
+``` r
+nsduh_table_format(html= nsduh_html,table_num = 5)
+```
+
+    ## # A tibble: 56 × 11
+    ##    State `12+(2013-2014)` `12+(2014-2015)` `12-17(2013-2014)` `12-17(2014-2015)`
+    ##    <chr> <chr>            <chr>            <chr>              <chr>             
+    ##  1 Tota… 0.30             0.33             0.12               0.10              
+    ##  2 Nort… 0.43a            0.54             0.13               0.13              
+    ##  3 Midw… 0.30             0.31             0.11               0.10              
+    ##  4 South 0.27             0.26             0.12               0.08              
+    ##  5 West  0.25             0.29             0.13               0.11              
+    ##  6 Alab… 0.22             0.27             0.10               0.08              
+    ##  7 Alas… 0.70a            1.23             0.11               0.08              
+    ##  8 Ariz… 0.32a            0.55             0.17               0.20              
+    ##  9 Arka… 0.19             0.17             0.10               0.07              
+    ## 10 Cali… 0.20             0.20             0.13               0.09              
+    ## # ℹ 46 more rows
+    ## # ℹ 6 more variables: `18-25(2013-2014)` <chr>, `18-25(2014-2015)` <chr>,
+    ## #   `26+(2013-2014)` <chr>, `26+(2014-2015)` <chr>, `18+(2013-2014)` <chr>,
+    ## #   `18+(2014-2015)` <chr>
+
+Creating a column and putting it into a dataframe
+
+``` r
+nsduh_df= 
+  tibble(
+    drug= c("marj","cocaine","herion"),
+    table_n= c(1,4,5)
+  )|>
+  mutate(table=map(table_n,nsduh_table_format, html = nsduh_html))|>
+  unnest(table)
+
+head(nsduh_df)
+```
+
+    ## # A tibble: 6 × 13
+    ##   drug  table_n State      `12+(2013-2014)` `12+(2014-2015)` `12-17(2013-2014)`
+    ##   <chr>   <dbl> <chr>      <chr>            <chr>            <chr>             
+    ## 1 marj        1 Total U.S. 12.90a           13.36            13.28b            
+    ## 2 marj        1 Northeast  13.88a           14.66            13.98             
+    ## 3 marj        1 Midwest    12.40b           12.76            12.45             
+    ## 4 marj        1 South      11.24a           11.64            12.02             
+    ## 5 marj        1 West       15.27            15.62            15.53a            
+    ## 6 marj        1 Alabama    9.98             9.60             9.90              
+    ## # ℹ 7 more variables: `12-17(2014-2015)` <chr>, `18-25(2013-2014)` <chr>,
+    ## #   `18-25(2014-2015)` <chr>, `26+(2013-2014)` <chr>, `26+(2014-2015)` <chr>,
+    ## #   `18+(2013-2014)` <chr>, `18+(2014-2015)` <chr>
+
+We can either use a for loop or use the map function to create another
+df
+
+**For loop way**
+
+``` r
+output = vector("list", 3)
+
+for (i in c(1, 4, 5)) {
+  output[[i]] = nsduh_table_format(nsduh_html, i)
+}
+
+nsduh_results = bind_rows(output)
+head(nsduh_results,n=5)
+```
+
+    ## # A tibble: 5 × 11
+    ##   State  `12+(2013-2014)` `12+(2014-2015)` `12-17(2013-2014)` `12-17(2014-2015)`
+    ##   <chr>  <chr>            <chr>            <chr>              <chr>             
+    ## 1 Total… 12.90a           13.36            13.28b             12.86             
+    ## 2 North… 13.88a           14.66            13.98              13.51             
+    ## 3 Midwe… 12.40b           12.76            12.45              12.33             
+    ## 4 South  11.24a           11.64            12.02              11.88             
+    ## 5 West   15.27            15.62            15.53a             14.43             
+    ## # ℹ 6 more variables: `18-25(2013-2014)` <chr>, `18-25(2014-2015)` <chr>,
+    ## #   `26+(2013-2014)` <chr>, `26+(2014-2015)` <chr>, `18+(2013-2014)` <chr>,
+    ## #   `18+(2014-2015)` <chr>
+
+**`map` way **
+
+``` r
+nsduh_results = 
+  map(c(1, 4, 5), nsduh_table_format, html = nsduh_html) |> 
+  bind_rows()
+
+head(nsduh_results,n=5)
+```
+
+    ## # A tibble: 5 × 11
+    ##   State  `12+(2013-2014)` `12+(2014-2015)` `12-17(2013-2014)` `12-17(2014-2015)`
+    ##   <chr>  <chr>            <chr>            <chr>              <chr>             
+    ## 1 Total… 12.90a           13.36            13.28b             12.86             
+    ## 2 North… 13.88a           14.66            13.98              13.51             
+    ## 3 Midwe… 12.40b           12.76            12.45              12.33             
+    ## 4 South  11.24a           11.64            12.02              11.88             
+    ## 5 West   15.27            15.62            15.53a             14.43             
+    ## # ℹ 6 more variables: `18-25(2013-2014)` <chr>, `18-25(2014-2015)` <chr>,
+    ## #   `26+(2013-2014)` <chr>, `26+(2014-2015)` <chr>, `18+(2013-2014)` <chr>,
+    ## #   `18+(2014-2015)` <chr>
+
+# Operations on nested data
+
+Were importing 3 weather stations and creating a df of it
+
+``` r
+weather_df = 
+  rnoaa::meteo_pull_monitors(
+    c("USW00094728", "USW00022534", "USS0023B17S"),
+    var = c("PRCP", "TMIN", "TMAX"), 
+    date_min = "2021-01-01",
+    date_max = "2022-12-31") |>
+  mutate(
+    name = recode(
+      id, 
+      USW00094728 = "CentralPark_NY", 
+      USW00022534 = "Molokai_HI",
+      USS0023B17S = "Waterhole_WA"),
+    tmin = tmin / 10,
+    tmax = tmax / 10) |>
+  select(name, id, everything())
+```
+
+Create a list column to nest everything from date to tmin into a column
+
+``` r
+weather_nest= 
+  weather_df|>
+  nest(data= date:tmin)
+weather_nest
+```
+
+    ## # A tibble: 3 × 3
+    ##   name           id          data              
+    ##   <chr>          <chr>       <list>            
+    ## 1 CentralPark_NY USW00094728 <tibble [730 × 4]>
+    ## 2 Molokai_HI     USW00022534 <tibble [730 × 4]>
+    ## 3 Waterhole_WA   USS0023B17S <tibble [730 × 4]>
+
+This is a list column so we can extract the data column which will
+return 3 seperate dataframes for each station:
+
+``` r
+weather_nest[["data"]]
+```
+
+    ## [[1]]
+    ## # A tibble: 730 × 4
+    ##    date        prcp  tmax  tmin
+    ##    <date>     <dbl> <dbl> <dbl>
+    ##  1 2021-01-01   157   4.4   0.6
+    ##  2 2021-01-02    13  10.6   2.2
+    ##  3 2021-01-03    56   3.3   1.1
+    ##  4 2021-01-04     5   6.1   1.7
+    ##  5 2021-01-05     0   5.6   2.2
+    ##  6 2021-01-06     0   5     1.1
+    ##  7 2021-01-07     0   5    -1  
+    ##  8 2021-01-08     0   2.8  -2.7
+    ##  9 2021-01-09     0   2.8  -4.3
+    ## 10 2021-01-10     0   5    -1.6
+    ## # ℹ 720 more rows
+    ## 
+    ## [[2]]
+    ## # A tibble: 730 × 4
+    ##    date        prcp  tmax  tmin
+    ##    <date>     <dbl> <dbl> <dbl>
+    ##  1 2021-01-01     0  27.8  22.2
+    ##  2 2021-01-02     0  28.3  23.9
+    ##  3 2021-01-03     0  28.3  23.3
+    ##  4 2021-01-04     0  30    18.9
+    ##  5 2021-01-05     0  28.9  21.7
+    ##  6 2021-01-06     0  27.8  20  
+    ##  7 2021-01-07     0  29.4  21.7
+    ##  8 2021-01-08     0  28.3  18.3
+    ##  9 2021-01-09     0  27.8  18.9
+    ## 10 2021-01-10     0  28.3  18.9
+    ## # ℹ 720 more rows
+    ## 
+    ## [[3]]
+    ## # A tibble: 730 × 4
+    ##    date        prcp  tmax  tmin
+    ##    <date>     <dbl> <dbl> <dbl>
+    ##  1 2021-01-01   254   3.2   0  
+    ##  2 2021-01-02   152   0.9  -3.2
+    ##  3 2021-01-03     0   0.2  -4.2
+    ##  4 2021-01-04   559   0.9  -3.2
+    ##  5 2021-01-05    25   0.5  -3.3
+    ##  6 2021-01-06    51   0.8  -4.8
+    ##  7 2021-01-07     0   0.2  -5.8
+    ##  8 2021-01-08    25   0.5  -8.3
+    ##  9 2021-01-09     0   0.1  -7.7
+    ## 10 2021-01-10   203   0.9  -0.1
+    ## # ℹ 720 more rows
+
+OR we can select dataframe of only from 1
+
+``` r
+weather_nest[["data"]][[1]]
+```
+
+    ## # A tibble: 730 × 4
+    ##    date        prcp  tmax  tmin
+    ##    <date>     <dbl> <dbl> <dbl>
+    ##  1 2021-01-01   157   4.4   0.6
+    ##  2 2021-01-02    13  10.6   2.2
+    ##  3 2021-01-03    56   3.3   1.1
+    ##  4 2021-01-04     5   6.1   1.7
+    ##  5 2021-01-05     0   5.6   2.2
+    ##  6 2021-01-06     0   5     1.1
+    ##  7 2021-01-07     0   5    -1  
+    ##  8 2021-01-08     0   2.8  -2.7
+    ##  9 2021-01-09     0   2.8  -4.3
+    ## 10 2021-01-10     0   5    -1.6
+    ## # ℹ 720 more rows
+
+We can try a regression tmax on tmin for 3 stations by doing a forloop
+or
+
+**for loop method**
+
+We created a new column using `mutate()` and then used the `\(x)`
+anonymous feature since `lm` is more complicated and requires a data
+specification for each lm
+
+- `pull()` allows you to pull all 3 model fits
+
+``` r
+weather_nest|>
+  mutate(
+    model_fit=map(data,\(x) lm(tmax ~ tmin,data=x))
+  )|>
+  pull(model_fit)
+```
+
+    ## [[1]]
+    ## 
+    ## Call:
+    ## lm(formula = tmax ~ tmin, data = x)
+    ## 
+    ## Coefficients:
+    ## (Intercept)         tmin  
+    ##       7.514        1.034  
+    ## 
+    ## 
+    ## [[2]]
+    ## 
+    ## Call:
+    ## lm(formula = tmax ~ tmin, data = x)
+    ## 
+    ## Coefficients:
+    ## (Intercept)         tmin  
+    ##     21.7547       0.3222  
+    ## 
+    ## 
+    ## [[3]]
+    ## 
+    ## Call:
+    ## lm(formula = tmax ~ tmin, data = x)
+    ## 
+    ## Coefficients:
+    ## (Intercept)         tmin  
+    ##       7.532        1.137

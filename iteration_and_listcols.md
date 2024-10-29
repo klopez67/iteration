@@ -146,3 +146,224 @@ mean_and_sd(list_norms[["a"]])
     ##    mean    sd
     ##   <dbl> <dbl>
     ## 1  2.70  1.12
+
+We can run the for loop to apply the function across multiple
+
+- Create output list and run a for loop -\> line 93 creates a vector
+  type list with a length of 4 -\> we left output and the \[\[ \]\]
+  blank
+
+``` r
+output = vector("list", length=4) 
+
+for( i in 1:4){
+  output[[i]]= mean_and_sd(list_norms[[i]])
+}
+
+output
+```
+
+    ## [[1]]
+    ## # A tibble: 1 × 2
+    ##    mean    sd
+    ##   <dbl> <dbl>
+    ## 1  2.70  1.12
+    ## 
+    ## [[2]]
+    ## # A tibble: 1 × 2
+    ##    mean    sd
+    ##   <dbl> <dbl>
+    ## 1 0.416  4.08
+    ## 
+    ## [[3]]
+    ## # A tibble: 1 × 2
+    ##    mean    sd
+    ##   <dbl> <dbl>
+    ## 1  10.1 0.191
+    ## 
+    ## [[4]]
+    ## # A tibble: 1 × 2
+    ##    mean    sd
+    ##   <dbl> <dbl>
+    ## 1 -3.43  1.18
+
+Our output is a list of dataframes for each a,b,c,d
+
+# `map`
+
+The map functions in purrr try to make the purpose of your code clear.
+
+- functions can be passed as arguments to other functions.
+
+We can do the same process with `map` instead
+
+``` r
+output= map(list_norms, mean_and_sd)
+
+output
+```
+
+    ## $a
+    ## # A tibble: 1 × 2
+    ##    mean    sd
+    ##   <dbl> <dbl>
+    ## 1  2.70  1.12
+    ## 
+    ## $b
+    ## # A tibble: 1 × 2
+    ##    mean    sd
+    ##   <dbl> <dbl>
+    ## 1 0.416  4.08
+    ## 
+    ## $c
+    ## # A tibble: 1 × 2
+    ##    mean    sd
+    ##   <dbl> <dbl>
+    ## 1  10.1 0.191
+    ## 
+    ## $d
+    ## # A tibble: 1 × 2
+    ##    mean    sd
+    ##   <dbl> <dbl>
+    ## 1 -3.43  1.18
+
+We can do the same for getting median:
+
+``` r
+output = map_dbl(list_norms, median, .id = "input")
+
+output
+```
+
+    ##          a          b          c          d 
+    ##  2.6213757  0.7210996 10.0501641 -3.5216649
+
+\#`map` variants
+
+Using map_bdl simplifies things into a vector instead of a list
+
+``` r
+output = map_dbl(list_norms, median, .id = "input")
+
+output
+```
+
+    ##          a          b          c          d 
+    ##  2.6213757  0.7210996 10.0501641 -3.5216649
+
+``` r
+output = map_dfr(list_norms, mean_and_sd, .id = "input")
+```
+
+We can bind the rows of this list of dataframes
+
+``` r
+output= 
+  map(list_norms, mean_and_sd)|>
+  bind_rows()
+
+output
+```
+
+    ## # A tibble: 4 × 2
+    ##     mean    sd
+    ##    <dbl> <dbl>
+    ## 1  2.70  1.12 
+    ## 2  0.416 4.08 
+    ## 3 10.1   0.191
+    ## 4 -3.43  1.18
+
+# List columns
+
+We have a datafram with columns “name” and holds the sample
+
+``` r
+listcol_df = 
+  tibble(
+    name = c("a", "b", "c", "d"),
+    samp = list_norms
+  )
+
+listcol_df |> pull(name)
+```
+
+    ## [1] "a" "b" "c" "d"
+
+``` r
+listcol_df |> pull(samp)
+```
+
+    ## $a
+    ##  [1] 4.134965 4.111932 2.129222 3.210732 3.069396 1.337351 3.810840 1.087654
+    ##  [9] 1.753247 3.998154 2.459127 2.783624 1.378063 1.549036 3.350910 2.825453
+    ## [17] 2.408572 1.665973 1.902701 5.036104
+    ## 
+    ## $b
+    ##  [1] -1.63244797  3.87002606  3.92503200  3.81623040  1.47404380 -6.26177962
+    ##  [7] -5.04751876  3.75695597 -6.54176756  2.63770049 -2.66769787 -1.99188007
+    ## [13] -3.94784725 -1.15070568  4.38592421  2.26866589 -1.16232074  4.35002762
+    ## [19]  8.28001867 -0.03184464
+    ## 
+    ## $c
+    ##  [1] 10.094098 10.055644  9.804419  9.814683 10.383954 10.176256 10.148416
+    ##  [8] 10.029515 10.097078 10.030371 10.008400 10.044684  9.797907 10.480244
+    ## [15] 10.160392  9.949758 10.242578  9.874548 10.342232  9.921125
+    ## 
+    ## $d
+    ##  [1] -5.321491 -1.635881 -1.867771 -3.774316 -4.410375 -4.834528 -3.269014
+    ##  [8] -4.833929 -3.814468 -2.836428 -2.144481 -3.819963 -3.123603 -2.745052
+    ## [15] -1.281074 -3.958544 -4.604310 -4.845609 -2.444263 -3.060119
+
+We can still treat this as a dataframe
+
+``` r
+listcol_df$samp[[1]]
+```
+
+    ##  [1] 4.134965 4.111932 2.129222 3.210732 3.069396 1.337351 3.810840 1.087654
+    ##  [9] 1.753247 3.998154 2.459127 2.783624 1.378063 1.549036 3.350910 2.825453
+    ## [17] 2.408572 1.665973 1.902701 5.036104
+
+It still treats it as a list we can still apply the function to the
+first element of the list
+
+``` r
+mean_and_sd(listcol_df$samp[[1]])
+```
+
+    ## # A tibble: 1 × 2
+    ##    mean    sd
+    ##   <dbl> <dbl>
+    ## 1  2.70  1.12
+
+We can still map of the this list and compute mean and sd
+
+- map takes the input of sample from the df lists, and the function
+
+``` r
+map(listcol_df[["samp"]],mean_and_sd)
+```
+
+    ## $a
+    ## # A tibble: 1 × 2
+    ##    mean    sd
+    ##   <dbl> <dbl>
+    ## 1  2.70  1.12
+    ## 
+    ## $b
+    ## # A tibble: 1 × 2
+    ##    mean    sd
+    ##   <dbl> <dbl>
+    ## 1 0.416  4.08
+    ## 
+    ## $c
+    ## # A tibble: 1 × 2
+    ##    mean    sd
+    ##   <dbl> <dbl>
+    ## 1  10.1 0.191
+    ## 
+    ## $d
+    ## # A tibble: 1 × 2
+    ##    mean    sd
+    ##   <dbl> <dbl>
+    ## 1 -3.43  1.18

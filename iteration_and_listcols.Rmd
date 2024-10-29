@@ -85,3 +85,94 @@ mean_and_sd(list_norms[[1]])
 mean_and_sd(list_norms[["a"]])
 ```
 
+We can run the for loop to apply the function across multiple 
+
+- Create output list and run a for loop
+-> line 93 creates a vector type list with a length of 4 
+-> we left output and the [[ ]] blank
+```{r}
+output = vector("list", length=4) 
+
+for( i in 1:4){
+  output[[i]]= mean_and_sd(list_norms[[i]])
+}
+
+output
+```
+Our output is a list of dataframes for each a,b,c,d
+
+# `map` 
+
+The map functions in purrr try to make the purpose of your code clear.
+
+- functions can be passed as arguments to other functions.
+
+We can do the same process with `map` instead
+
+```{r}
+output= map(list_norms, mean_and_sd)
+
+output
+```
+
+We can do the same for getting median: 
+```{r}
+output = map_dbl(list_norms, median, .id = "input")
+
+output
+```
+
+#`map` variants
+
+Using map_bdl simplifies things into a vector instead of a list 
+```{r}
+output = map_dbl(list_norms, median, .id = "input")
+
+output
+```
+```{r}
+output = map_dfr(list_norms, mean_and_sd, .id = "input")
+
+```
+
+
+We can bind the rows of this list of dataframes
+```{r}
+
+output= 
+  map(list_norms, mean_and_sd)|>
+  bind_rows()
+
+output
+```
+
+# List columns 
+
+We have a datafram with columns "name" and holds the sample 
+```{r}
+listcol_df = 
+  tibble(
+    name = c("a", "b", "c", "d"),
+    samp = list_norms
+  )
+
+listcol_df |> pull(name)
+listcol_df |> pull(samp)
+```
+
+We can still treat this as a dataframe   
+```{r}
+listcol_df$samp[[1]]
+```
+It still treats it as a list 
+we can still apply the function to the first element of the list 
+```{r}
+mean_and_sd(listcol_df$samp[[1]])
+```
+We can still map of the this list and compute mean and sd 
+
+- map takes the input of sample from the df lists, and the function 
+```{r}
+map(listcol_df[["samp"]],mean_and_sd)
+```
+

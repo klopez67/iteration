@@ -335,3 +335,12 @@ weather_nest|>
   pull(model_fit)
 ```
 
+** This can also be done by ** 
+
+```{r}
+weather_lm(weather_nest[["data"]][[1]])
+
+weather_nest|>
+  mutate(model_fit = map(data,weather_lm))
+```
+

@@ -1,0 +1,9 @@
+---
+title: "simulation"
+author: "Kimberly Lopez"
+date: "2024-10-31"
+output: github_document
+---
+
+**Example**
+

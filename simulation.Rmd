@@ -85,10 +85,10 @@ sim_results
 ```{r}
 sim_results= 
   expand_grid(
-    n= c(10,30,60,100),
+    sample_size= c(10,30,60,100),
     iter= 1:100
   )|>
-  mutate(samp_results= map(n,sim_mean_sd))|>
+  mutate(samp_results= map(sample_size,sim_mean_sd))|>
   unnest(samp_results)
 
 sim_results
@@ -98,7 +98,7 @@ Now we can  `group_by` n and summarize the stanadrd error of the sample mean
 
 ```{r}
 sim_results |> 
-  group_by(n)|>
+  group_by(sample_size)|>
   summarize(
     se= sd(samp_mean)
   )
@@ -110,17 +110,17 @@ sim_results |>
 -> used a histogram since a `violin` requires you to have a factor variable
 ```{r}
 sim_results|> 
-  filter(n==100)|>
+  filter(sample_size==100)|>
   ggplot(aes(x=samp_mean))+
   geom_histogram()
 ```
-
-```{r eval=FALSE, include=TRUE}
+# Varying two simulation paramaters
+```{r echo=TRUE}
 sim_results|> 
   mutate(
-    n= str_c("n = ", n),
-    n = fct_inorder(n))|> 
-  ggplot(as(x = n, y = samp_mean)) +
+    sample_size = str_c("n = ", sample_size),
+    sample_size = fct_inorder(sample_size)) |> 
+  ggplot(aes(x = sample_size, y = samp_mean, fill= sample_size)) +
   geom_violin()
 ```
 
@@ -142,9 +142,11 @@ sim_data|>
 lm_fit= lm(y~x, data= sim_data)
 ```
 
-**We can turn this into a function that returns the coefficents output**
 
-- `coef(lm_fit[index#])` will give you the beta coefficents
+## Simulation: Simple Linear Regression for one n 
+**We can turn this into a function that returns the coefficients output**
+
+- `coef(lm_fit[index#])` will give you the beta coefficients
 
 ```{r}
 sim_regression = function (n){
@@ -182,6 +184,10 @@ sim_results|>
   mutate(sample_sez= str_c("n = ", sample_size)) |>
   ggplot(aes(x= sample_size, y = beta1_hat))+ 
   geom_boxplot()
+
+sim_results |> 
+  ggplot(aes(x = beta0_hat, y = beta1_hat)) + 
+  geom_point()
 ```
 
 ## Birthday Problem 
@@ -215,4 +221,7 @@ sim_results =
 
 sim_results
 ```
+
+# Varying Two simulation paramaters 
+
 

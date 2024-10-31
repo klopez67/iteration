@@ -131,28 +131,28 @@ sim_results
 ``` r
 sim_results= 
   expand_grid(
-    n= c(10,30,60,100),
+    sample_size= c(10,30,60,100),
     iter= 1:100
   )|>
-  mutate(samp_results= map(n,sim_mean_sd))|>
+  mutate(samp_results= map(sample_size,sim_mean_sd))|>
   unnest(samp_results)
 
 sim_results
 ```
 
     ## # A tibble: 400 × 4
-    ##        n  iter samp_mean samp_sd
-    ##    <dbl> <int>     <dbl>   <dbl>
-    ##  1    10     1     1.19     3.12
-    ##  2    10     2     2.29     3.45
-    ##  3    10     3     4.39     3.23
-    ##  4    10     4     0.524    1.90
-    ##  5    10     5     2.34     2.79
-    ##  6    10     6     1.88     2.78
-    ##  7    10     7     0.306    2.35
-    ##  8    10     8     3.35     5.00
-    ##  9    10     9     2.58     3.82
-    ## 10    10    10     1.83     3.45
+    ##    sample_size  iter samp_mean samp_sd
+    ##          <dbl> <int>     <dbl>   <dbl>
+    ##  1          10     1     1.19     3.12
+    ##  2          10     2     2.29     3.45
+    ##  3          10     3     4.39     3.23
+    ##  4          10     4     0.524    1.90
+    ##  5          10     5     2.34     2.79
+    ##  6          10     6     1.88     2.78
+    ##  7          10     7     0.306    2.35
+    ##  8          10     8     3.35     5.00
+    ##  9          10     9     2.58     3.82
+    ## 10          10    10     1.83     3.45
     ## # ℹ 390 more rows
 
 Now we can `group_by` n and summarize the stanadrd error of the sample
@@ -160,19 +160,19 @@ mean
 
 ``` r
 sim_results |> 
-  group_by(n)|>
+  group_by(sample_size)|>
   summarize(
     se= sd(samp_mean)
   )
 ```
 
     ## # A tibble: 4 × 2
-    ##       n    se
-    ##   <dbl> <dbl>
-    ## 1    10 0.982
-    ## 2    30 0.536
-    ## 3    60 0.337
-    ## 4   100 0.323
+    ##   sample_size    se
+    ##         <dbl> <dbl>
+    ## 1          10 0.982
+    ## 2          30 0.536
+    ## 3          60 0.337
+    ## 4         100 0.323
 
 **we can also visualize these results**
 
@@ -181,23 +181,26 @@ variable
 
 ``` r
 sim_results|> 
-  filter(n==100)|>
+  filter(sample_size==100)|>
   ggplot(aes(x=samp_mean))+
   geom_histogram()
 ```
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](simulation_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](simulation_files/figure-gfm/unnamed-chunk-8-1.png)<!-- --> \#
+Varying two simulation paramaters
 
 ``` r
 sim_results|> 
   mutate(
-    n= str_c("n = ", n),
-    n = fct_inorder(n))|> 
-  ggplot(as(x = n, y = samp_mean)) +
+    sample_size = str_c("n = ", sample_size),
+    sample_size = fct_inorder(sample_size)) |> 
+  ggplot(aes(x = sample_size, y = samp_mean, fill= sample_size)) +
   geom_violin()
 ```
+
+![](simulation_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 # Simple Linear Regression
 
@@ -222,9 +225,12 @@ sim_data|>
 lm_fit= lm(y~x, data= sim_data)
 ```
 
-**We can turn this into a function that returns the coefficents output**
+## Simulation: Simple Linear Regression for one n
 
-- `coef(lm_fit[index#])` will give you the beta coefficents
+**We can turn this into a function that returns the coefficients
+output**
+
+- `coef(lm_fit[index#])` will give you the beta coefficients
 
 ``` r
 sim_regression = function (n){
@@ -278,6 +284,14 @@ sim_results|>
 
 ![](simulation_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
+``` r
+sim_results |> 
+  ggplot(aes(x = beta0_hat, y = beta1_hat)) + 
+  geom_point()
+```
+
+![](simulation_files/figure-gfm/unnamed-chunk-12-2.png)<!-- -->
+
 ## Birthday Problem
 
 ``` r
@@ -318,3 +332,5 @@ sim_results
     ##   <dbl> <dbl>
     ## 1    10  0.16
     ## 2    50  0.15
+
+# Varying Two simulation paramaters
